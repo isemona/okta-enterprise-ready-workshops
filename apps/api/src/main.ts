@@ -8,7 +8,7 @@ import { universalLogoutRoute } from './universalLogout';
 import morgan from 'morgan';
 import { store } from './sessionsStore';
 
-// Signed Jwat Verifier for Universal Logout
+// Signed JWT Verifier for Universal Logout
 import OktaJwtVerifier from '@okta/jwt-verifier';
 
 interface IUser {
@@ -304,9 +304,10 @@ app.get('/openid/callback/:id', async (req, res, next) => {
 ///////////////////////////////////////////////////////
 // Universal Logout Route
 
+// Signed Jwt Validation
 const oktaJwtVerifier = new OktaJwtVerifier({
-  issuer: 'https://whiterabbit.clouditude.com',
-  jwksUri: 'https://whiterabbit.clouditude.com/oauth2/v1/keys',
+  issuer: 'https://{yourOktaDomain}.com',
+  jwksUri: 'https://{yourOktaDomain}.com/oauth2/v1/keys',
 });
 
 const tokenValidator = async function (req, res, next) {
@@ -317,7 +318,7 @@ const tokenValidator = async function (req, res, next) {
   const parts = authHeaders.split(' ');
   const jwt = parts[1];
   const expectedAud =
-    'https://whiterabbit.clouditude.com';
+    'https://{yourOktaDomain}.com';
 
   try {
     const verifiedJwt = await oktaJwtVerifier.verifyAccessToken(

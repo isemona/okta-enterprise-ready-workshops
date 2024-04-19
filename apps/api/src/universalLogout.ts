@@ -18,15 +18,14 @@ universalLogoutRoute.post('/global-token-revocation', async (req, res) => {
   if (!req.body) {
     res.status(400);
   }
+
+  // Find the user by email and associated org id from the validated signed JWT
   const domainOrg = req['org']
-
-  const newResquest:IRequestSchema = req.body;
-  const { email } = newResquest.sub_id
-
+  const newRequest: IRequestSchema = req.body;
+  const { email } = newRequest.sub_id
   const user = await prisma.user.findFirst({
     where: {
       email: email,
-      
       org: { id: domainOrg.id } ,
     },
   });
@@ -48,9 +47,7 @@ universalLogoutRoute.post('/global-token-revocation', async (req, res) => {
   });
 
   sids.map((sid) => store.destroy(sid));
-
   console.log('User session deleted')
-
   return res.sendStatus(httpStatus);
 });
 
