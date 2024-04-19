@@ -19,7 +19,7 @@ universalLogoutRoute.post('/global-token-revocation', async (req, res) => {
     res.status(400);
   }
 
-  // Find the user by email and associated org id from the validated signed JWT
+  // Find the user by email associated with the org id from the validated signed JWT
   const domainOrg = req['org']
   const newRequest: IRequestSchema = req.body;
   const { email } = newRequest.sub_id
