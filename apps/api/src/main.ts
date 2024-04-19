@@ -6,10 +6,9 @@ import passport from 'passport';
 import session from 'express-session';
 import { universalLogoutRoute } from './universalLogout';
 import morgan from 'morgan';
-
-// Bearer Auth - Universal Logout
-import passportBearer from 'passport-http-bearer';
 import { store } from './sessionsStore';
+
+// Signed Jwat Verifier for Universal Logout
 import OktaJwtVerifier from '@okta/jwt-verifier';
 
 interface IUser {
@@ -19,9 +18,6 @@ interface IUser {
 const prisma = new PrismaClient();
 const LocalStrategy = passportLocal.Strategy;
 const OpenIDConnectStrategy = passportOIDC.Strategy;
-
-// Bearer Auth - Universal Logout
-const BearerStrategy = passportBearer.Strategy;
 
 const app = express();
 app.use(express.json());
@@ -308,19 +304,6 @@ app.get('/openid/callback/:id', async (req, res, next) => {
 ///////////////////////////////////////////////////////
 // Universal Logout Route
 
-// Bearer Auth Strategy
-passport.use(
-  new BearerStrategy(async (apikey, done) => {
-    const org = await prisma.org.findFirst({
-      where: {
-        apikey: apikey,
-      },
-    });
-
-    return done(null, org);
-  })
-);
-
 const oktaJwtVerifier = new OktaJwtVerifier({
   issuer: 'https://whiterabbit.clouditude.com',
   jwksUri: 'https://whiterabbit.clouditude.com/oauth2/v1/keys',
@@ -332,10 +315,9 @@ const tokenValidator = async function (req, res, next) {
     return res.sendStatus(401);
   }
   const parts = authHeaders.split(' ');
-
   const jwt = parts[1];
   const expectedAud =
-    'https://empty-hornets-sing.loca.lt/global-token-revocation';
+    'https://whiterabbit.clouditude.com';
 
   try {
     const verifiedJwt = await oktaJwtVerifier.verifyAccessToken(
@@ -347,7 +329,6 @@ const tokenValidator = async function (req, res, next) {
     console.log(err);
     return res.sendStatus(401);
   }
-
   const issuer = jwt.iss;
   const org = await prisma.org.findFirst({
     where: {
@@ -355,12 +336,9 @@ const tokenValidator = async function (req, res, next) {
     },
   });
 
-  console.log(org);
   req.org = org;
-
   next();
 };
 
 app.use(morgan('combined'));
-//app.use('/', passport.authenticate('bearer', { session: false }), universalLogoutRoute);
 app.use('/', tokenValidator, universalLogoutRoute);
