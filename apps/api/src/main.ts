@@ -4,6 +4,8 @@ import passportLocal from 'passport-local';
 import passportOIDC from 'passport-openidconnect';
 import passport from 'passport';
 import session from 'express-session';
+import { universalLogoutRoute } from './universalLogout';
+import morgan from 'morgan';
 
 interface IUser {
   id: number;
@@ -43,7 +45,7 @@ app.use('/api/users', (req, res, next) => {
 
 passport.use(new LocalStrategy(async (username, password, done) => {
     const user = await prisma.user.findFirst({
-      where: { 
+      where: {
         AND: {
           email: username,
           password
@@ -61,7 +63,7 @@ passport.serializeUser( async (user: IUser, done) => {
 
 passport.deserializeUser( async (id: number, done) => {
   const user: User = await prisma.user.findUnique({
-    where: { 
+    where: {
      id
     }
   });
@@ -80,7 +82,7 @@ app.post('/api/signout', async (req, res, next) => {
     if (err) { return next(err)};
     res.sendStatus(204);
   });
-  
+
 });
 
 app.get('/api/users/me', async (req, res) => {
@@ -294,6 +296,14 @@ app.get('/openid/callback/:id', async (req, res, next) => {
   })(req, res, next);
 
 });
+
+///////////////////////////////////////////////////////
+// Universal Logout Route
+
+
+
+app.use(morgan('combined'))
+app.use('/', universalLogoutRoute);
 
 
 
